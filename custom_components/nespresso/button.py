@@ -105,9 +105,7 @@ class NespressoResetDescalingButton(
     _attr_name = "Reset descaling counter"
     _attr_icon = "mdi:restart"
 
-    def __init__(
-        self, coordinator: NespressoCoordinator, entry: ConfigEntry
-    ) -> None:
+    def __init__(self, coordinator: NespressoCoordinator, entry: ConfigEntry) -> None:
         super().__init__(coordinator)
         self._address = entry.data["address"]
         self._attr_unique_id = f"{self._address}_reset_descaling"
@@ -224,7 +222,7 @@ class NespressoVertuoBrewButton(CoordinatorEntity[NespressoCoordinator], ButtonE
 
         # Tell the coordinator to keep the next poll connection alive
         # so we can send the brew on the same authenticated session
-        self.coordinator._keep_connection = True  # noqa: SLF001
+        self.coordinator._keep_connection = True
 
         waiting = {"heating", "initializing", "ready_old_capsule"}
         waking = {"power_save", "standby"}
