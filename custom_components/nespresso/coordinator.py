@@ -27,8 +27,8 @@ from __future__ import annotations
 
 import asyncio
 import json
-import time
 import logging
+import time
 from dataclasses import asdict, replace
 from datetime import timedelta
 from pathlib import Path
@@ -37,21 +37,22 @@ from bleak import BleakClient, BleakError
 from bleak_retry_connector import establish_connection
 from homeassistant.components import bluetooth
 from homeassistant.core import HomeAssistant, callback
+from homeassistant.helpers.storage import Store
 from homeassistant.helpers.update_coordinator import (
     DataUpdateCoordinator,
     UpdateFailed,
 )
 
 from .ble.parsing import (
-    parse_venus_advertisement,
     parse_barista_machine_info,
+    parse_barista_machine_params,
     parse_barista_status,
     parse_caps_counter,
-    parse_barista_machine_params,
     parse_error_information,
-    parse_profile_version,
     parse_general_user_settings,
+    parse_profile_version,
     parse_serial_number,
+    parse_venus_advertisement,
     parse_vertuonext_machine_info,
     parse_vertuonext_status,
     parse_vmini_fota_status,
@@ -59,16 +60,14 @@ from .ble.parsing import (
 from .ble.protocol import generate_auth_key, get_protocol
 from .ble.recipe import parse_recipe_info
 from .const import (
+    BARISTA_CHAR_STATUS,
     COUNTER_SAVE_DELAY,
     COUNTER_STORAGE_VERSION,
-    BARISTA_CHAR_STATUS,
     DEFAULT_SCAN_INTERVAL,
     DOMAIN,
     VERTUO_CHAR_STATUS,
     MachineFamily,
 )
-from homeassistant.helpers.storage import Store
-
 from .models import NespressoMachineData, RawMachineData
 
 _LOGGER = logging.getLogger(__name__)
@@ -177,8 +176,8 @@ class NespressoCoordinator(DataUpdateCoordinator[NespressoMachineData]):
         if client is not None:
             try:
                 await client.disconnect()
-            except Exception:  # noqa: BLE001
-                pass
+            except Exception as err:  # noqa: BLE001
+                _LOGGER.debug("Error disconnecting BLE client: %s", err)
 
     def _on_status_notification(self, _sender: object, data: bytearray) -> None:
         """Handle BLE GATT notification for status changes.
@@ -280,8 +279,8 @@ class NespressoCoordinator(DataUpdateCoordinator[NespressoMachineData]):
                 try:
                     tmp = BleakClient(device)
                     await tmp.unpair()
-                except Exception:  # noqa: BLE001
-                    pass
+                except Exception as err:  # noqa: BLE001
+                    _LOGGER.debug("Failed to clear stale bond: %s", err)
                 await asyncio.sleep(3)
                 device = bluetooth.async_ble_device_from_address(
                     self.hass, self.address, connectable=True
@@ -342,8 +341,8 @@ class NespressoCoordinator(DataUpdateCoordinator[NespressoMachineData]):
                         try:
                             tmp = BleakClient(device)
                             await tmp.unpair()
-                        except Exception:  # noqa: BLE001
-                            pass
+                        except Exception as err:  # noqa: BLE001
+                            _LOGGER.debug("Failed to clear stale bond: %s", err)
                         await asyncio.sleep(3)
                         device = bluetooth.async_ble_device_from_address(
                             self.hass, self.address, connectable=True
@@ -399,8 +398,8 @@ class NespressoCoordinator(DataUpdateCoordinator[NespressoMachineData]):
             if client is not None:
                 try:
                     await client.disconnect()
-                except Exception:  # noqa: BLE001
-                    pass
+                except Exception as err:  # noqa: BLE001
+                    _LOGGER.debug("Error disconnecting BLE client: %s", err)
 
     async def async_bst_send(self, cmd_uuid: str, rsp_uuid: str, data: bytes) -> bool:
         """Send data via BST protocol on the kept connection."""
@@ -413,8 +412,6 @@ class NespressoCoordinator(DataUpdateCoordinator[NespressoMachineData]):
             from .ble.bst import bst_send
 
             return await bst_send(client, cmd_uuid, rsp_uuid, data)
-
-
 
     async def async_load_counters(
         self, descaling_capsules: int, descaling_days: int
@@ -598,8 +595,8 @@ class NespressoCoordinator(DataUpdateCoordinator[NespressoMachineData]):
                 tmp = BleakClient(device)
                 await tmp.unpair()
                 _LOGGER.debug("BlueZ device removed")
-            except Exception:  # noqa: BLE001
-                pass
+            except Exception as err:  # noqa: BLE001
+                _LOGGER.debug("Failed to remove BlueZ device: %s", err)
             await asyncio.sleep(3)
             device = bluetooth.async_ble_device_from_address(
                 self.hass, self.address, connectable=True
@@ -639,8 +636,8 @@ class NespressoCoordinator(DataUpdateCoordinator[NespressoMachineData]):
                 _LOGGER.info("Auth failed, reconnecting for retry")
                 try:
                     await client.disconnect()
-                except Exception:  # noqa: BLE001
-                    pass
+                except Exception as err:  # noqa: BLE001
+                    _LOGGER.debug("Error disconnecting before retry: %s", err)
                 client = await establish_connection(
                     BleakClient, device, self.address, max_attempts=3
                 )

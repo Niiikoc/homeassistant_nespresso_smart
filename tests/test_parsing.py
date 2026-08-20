@@ -28,10 +28,10 @@ Smart APK v1.2.5. Each test documents the exact byte layout and expected
 parsing result.
 """
 
-import pytest
-
 import sys
 from unittest.mock import MagicMock
+
+import pytest
 
 # Stub homeassistant before any nespresso imports
 sys.modules.setdefault("homeassistant", MagicMock())
@@ -51,19 +51,18 @@ sys.modules.setdefault("homeassistant.data_entry_flow", MagicMock())
 sys.modules.setdefault("bleak", MagicMock())
 sys.modules.setdefault("bleak_retry_connector", MagicMock())
 
-from custom_components.nespresso.ble.parsing import (  # noqa: E402
+from custom_components.nespresso.ble.parsing import (
     parse_barista_machine_info,
     parse_barista_status,
     parse_error_information,
     parse_general_user_settings,
     parse_serial_number,
+    parse_venus_advertisement,
     parse_version_v2,
     parse_version_v3,
     parse_vertuonext_machine_info,
-    parse_venus_advertisement,
     parse_vertuonext_status,
 )
-
 
 # ---------------------------------------------------------------------------
 # Version parsing (matches Utils.getVersionV2 / getVersionV3)
@@ -432,6 +431,7 @@ class TestErrorInformation:
     def test_too_short_raises(self) -> None:
         with pytest.raises(ValueError, match="3 bytes"):
             parse_error_information(b"\x00\x00")
+
 
 # ---------------------------------------------------------------------------
 # Venus BLE advertisement

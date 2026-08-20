@@ -41,10 +41,10 @@ from ..const import (
     BARISTA_CHAR_AUTH,
     BARISTA_CHAR_INFO,
     BARISTA_CHAR_MACHINE_PARAMS,
-    BARISTA_CHAR_PROFILE_VERSION,
-    BARISTA_CHAR_RECIPE_INFO,
     BARISTA_CHAR_ONBOARD_STATUS,
     BARISTA_CHAR_PAIR,
+    BARISTA_CHAR_PROFILE_VERSION,
+    BARISTA_CHAR_RECIPE_INFO,
     BARISTA_CHAR_SERIAL,
     BARISTA_CHAR_STATUS,
     VERTUO_CHAR_AUTH,
@@ -61,9 +61,9 @@ from ..const import (
     VERTUO_CHAR_SERIAL,
     VERTUO_CHAR_STATUS,
     VERTUO_CHAR_USER_SETTINGS,
-    VMINI_CHAR_MACHINE_TOKEN,
     VMINI_CHAR_FOTA_STATUS,
     VMINI_CHAR_FW_REV,
+    VMINI_CHAR_MACHINE_TOKEN,
     VMINI_CHAR_MANUFACTURER,
     VMINI_CHAR_MODEL,
     VMINI_CHAR_PAIRING,
@@ -413,9 +413,7 @@ class VertuoNextProtocol(AbstractNespressoProtocol):
         )
         # Select current active error (index 0) then read error info
         try:
-            await _write(client, 
-                VERTUO_CHAR_ERROR_SELECTION, bytes([0]), response=True
-            )
+            await _write(client, VERTUO_CHAR_ERROR_SELECTION, bytes([0]), response=True)
             _LOGGER.debug("Error selection set to index 0 (current active)")
         except Exception:  # noqa: BLE001
             _LOGGER.debug("Error selection write not available")
@@ -426,9 +424,7 @@ class VertuoNextProtocol(AbstractNespressoProtocol):
         # Also read error at index 1 (error present in list) for diagnostics
         error_list_entry = None
         try:
-            await _write(client, 
-                VERTUO_CHAR_ERROR_SELECTION, bytes([1]), response=True
-            )
+            await _write(client, VERTUO_CHAR_ERROR_SELECTION, bytes([1]), response=True)
             error_list_entry = await _read(client, VERTUO_CHAR_ERROR_INFO)
             _LOGGER.debug("Error list entry raw: %s", error_list_entry.hex())
         except Exception:  # noqa: BLE001
